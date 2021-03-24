@@ -11,7 +11,7 @@ def clerp(a, b, t):
 
 
 class GUIMaskPainter:
-    def __init__(self, size=(400, 400)):
+    def __init__(self, size=(128, 128)):
         self.brush_size = 5
         self.canvas_size = size
 
@@ -66,7 +66,6 @@ class GUIMaskPainter:
                 )
                 self.canvas_image.put("#%02x%02x%02x" % color, (x, y))
 
-        # tk_canvas.pack()
         # print("clicked at", event.x, event.y)
 
     def show(self):
@@ -75,8 +74,11 @@ class GUIMaskPainter:
 
         self.window = sg.Window('Create mask window', self.layout, finalize=True)
         tk_canvas = self.window['mask_canvas'].tk_canvas
-        tk_canvas.bind("<B1-Motion>", lambda event: self.canvas_draw_callback(event, (255, 255, 255)))  # left mb drag
-        tk_canvas.bind("<B3-Motion>", lambda event: self.canvas_draw_callback(event, (0, 0, 0)))  # right mb drag
+        tk_canvas.bind("<B1-Motion>", lambda event: self.canvas_draw_callback(event, (255, 255, 255)))  # lmb drag
+        tk_canvas.bind("<Button-1>", lambda event: self.canvas_draw_callback(event, (255, 255, 255)))  # lmb click
+        tk_canvas.bind("<B3-Motion>", lambda event: self.canvas_draw_callback(event, (0, 0, 0)))  # rmb drag
+        tk_canvas.bind("<Button-3>", lambda event: self.canvas_draw_callback(event, (0, 0, 0)))  # rmb click
+
         tk_canvas.pack()
 
         self.canvas_image = PhotoImage(width=self.canvas_size[0], height=self.canvas_size[1])

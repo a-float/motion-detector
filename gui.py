@@ -153,8 +153,8 @@ class GUI:
             # end while
 
         # Deallocating unused resources
-        self.main_window.close()
         self.mask_painter.close()
+        self.main_window.close()
 
     # hardcoded size, works for my webcam
     # updates the image with the key that's in the window
