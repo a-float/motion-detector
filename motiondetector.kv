@@ -1,0 +1,31 @@
+#:kivy 2.0.0
+#:import CameraFeed ui.CameraFeed
+#:import VideoStream imutils.video.VideoStream
+
+<CameraFeedScreen>:
+    CameraFeed:
+        capture: VideoStream(src=0).start()
+        size: root.size
+
+<AppHeader>:
+    Button:
+        text: 'Init'
+        width: 100
+        size_hint: (None, 1)
+    Button:
+        text: 'Load'
+        width: 100
+        size_hint: (None, 1)
+    Button:
+        text: 'Exit'
+        width: 100
+        size_hint: (None, 1)
+
+<FeedWindow>:
+    orientation: 'vertical'
+    AppHeader:
+        orientation: 'tb-lr'
+        size: self.width, 36
+        size_hint: (1, None)
+        padding: [10, 5]
+    CameraFeedScreen:
