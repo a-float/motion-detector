@@ -1,11 +1,13 @@
 from imutils.video import VideoStream
+from motion_buffer_lib import MotionBuffer
 import argparse
 import datetime
 import imutils
 import time
 import cv2
+from record_lib import Recorder
 
-WIDTH = 500
+WIDTH = 300
 HEIGHT = -1 #not used rn -1 should preserve the frame ratio i guess
 
 DEF_ARGS={'blur_x':25, 'blur_y':25, 'treshold':40, 'min_area':4000,
@@ -15,9 +17,12 @@ class MotionTracker():
 	def __init__(self, args=DEF_ARGS.copy()):
 		self.params = args
 		self.cap = None
-		self.ref_frame = None
+		self.frame_time = None
 		self.video_source = None # to remember what we are streaming
 		self.ref_frame_age = 0
+		self.motion_buffer = None
+		self.cap_size = None	#(width, height) of currently captured video
+		self.recorder = Recorder(5)
 
 	def set_params(self, args):
 		self.params = args
@@ -25,18 +30,14 @@ class MotionTracker():
 	def get_params(self):
 		return self.params
 
-	def start_capture(self, video_source=None):
+	def start_capture(self, video_source=0):
 		if self.is_capturing():
 			print("Can't start another capture while capturing.")
 			return 
-		if video_source is None:
-			# read from the webcam
-			self.cap = VideoStream(src=0).start()
-			# time.sleep(1.0) #let the camera warm up
-		else:
-			# otherwise, read from the video file
-			self.video_source = video_source
-			self.cap = cv2.VideoCapture(video_source, cv2.CAP_DSHOW)
+		self.video_source = video_source
+		self.cap = cv2.VideoCapture(video_source)
+		if not self.cap.isOpened():
+			self.cap.open()
 
 	def read_frame(self):
 		frame = self.cap.read()
@@ -45,14 +46,6 @@ class MotionTracker():
 			self.stop_capture()
 			return None
 		return frame
-
-	def update_ref_frame(self, parsed):
-		max_age = self.params.get('ref_resets', DEF_ARGS['ref_reset'])
-		#the ref frame has not been initialized or its time to change it
-		if self.ref_frame is None or self.ref_frame_age == max_age:
-			self.ref_frame = parsed
-			self.ref_frame_age = 0
-		self.ref_frame_age += 1
 
 	def parse_frame(self, frame):
 		resized = imutils.resize(frame, width=WIDTH)
@@ -63,13 +56,13 @@ class MotionTracker():
 		blur_radius_y = self.params.get('blur_y', DEF_ARGS['blur_y'])
 		blurred = cv2.GaussianBlur(gray, (blur_radius_x, blur_radius_y), cv2.BORDER_DEFAULT)
 		parsed = blurred
-		self.update_ref_frame(parsed)
+		if self.motion_buffer is None:
+			self.motion_buffer = MotionBuffer(parsed)
 		return parsed
 
-	def calc_diff(self, grey_frame):
+	def calc_diff(self, grey_frame, ref_frame):
 		# compute the absolute difference between the current frame and the first frame
-		assert self.ref_frame is not None
-		frame_delta = cv2.absdiff(self.ref_frame, grey_frame)
+		frame_delta = cv2.absdiff(ref_frame, grey_frame)
 		return frame_delta
 		
 
@@ -79,26 +72,66 @@ class MotionTracker():
 		#[1] is getting the frame (i think, cant find ref)
 		thresh = cv2.threshold(frame_delta, treshold, 255, cv2.THRESH_BINARY)[1] 
 		# dilate the thresholded image to fill in holes
-		thresh = cv2.dilate(thresh, None, iterations=2)
+		thresh = cv2.dilate(thresh, None, iterations=1)
 		return thresh
 
-	def show_contours(self, frame, gray, thresh):
+	def draw_contours(self, frame, bit):
 		cnts = cv2.findContours(
-			thresh.copy(), #not modifying the tresh image, to show it in the debug
+			bit.copy(), #not modifying the bit image, to show it in the debug
 			cv2.RETR_EXTERNAL, #all the countours with no real hierarchy
 			cv2.CHAIN_APPROX_SIMPLE) #simplify the shape
 
 		cnts = imutils.grab_contours(cnts)	#idk
 		min_area = self.params.get('min_area', DEF_ARGS['min_area'])
 		# loop over the contours
+		found_movement = False
 		for c in cnts:
 			# if the contour is too small, ignore it
 			if cv2.contourArea(c) < min_area:
 				continue
 			# compute the bounding box for the contour, draw it on the frame and update the text
 			(x, y, w, h) = cv2.boundingRect(c)
+			scale = self.get_capture_shape()[0]/WIDTH
+			x, y, w, h = int(x*scale), int(y*scale), int(w*scale), int(h*scale)
+			found_movement = True
 			# frame to draw on, top corner, bottom corner, color, thiccccknesss
 			cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+		return found_movement
+
+	def get_capture_shape(self):
+		width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+		height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+		return (int(width), int(height))
+
+	def get_capture_framerate(self):
+		if self.is_capturing():
+			return self.cap.get(cv2.CAP_PROP_FPS)
+		else:
+			return None
+
+	def detect(self, parsed, draw_on):	#motion is same as is_motion
+		motion = False
+		for i, ref in enumerate(reversed(self.motion_buffer.get_buffer())):
+			delta = self.calc_diff(parsed, ref)
+			bit = self.calc_bit(delta)
+			is_motion = self.draw_contours(draw_on, bit)
+			if is_motion:
+				motion = True
+			self.motion_buffer.update_buffer(parsed, i, is_motion) #TODO change i to ref or smth
+		#sorry im putting it here. It hurts me as much as it hurts You, maybe
+		return delta, bit, motion
+
+	def save_motion(self, frame, is_motion):
+		if is_motion:
+			if not self.recorder.is_recording():
+				fps = self.get_capture_framerate()
+				self.recorder.start(fps, *list(self.get_capture_shape())) #unpacking a tuple :c
+			self.recorder.save_frame(frame)
+		elif self.recorder.is_recording():
+			#recorder waits a bit after last seen activity
+			if time.time() - self.motion_buffer.get_last_movement_time() > self.recorder.wait_time:
+				self.recorder.stop()
 
 	def show_time(self, frame):
 		cv2.putText(frame, 
@@ -108,8 +141,11 @@ class MotionTracker():
 	def stop_capture(self):
 		#stop if video, release if camera i think
 		if self.is_capturing:
-			self.cap.stop() if not self.params.get('video') else self.cap.release()
+			self.motion_buffer = None
+			self.cap.release()
+			self.video_source = None
 			self.cap = None
+			self.cap_size = None
 		else:
 			print("Can't stop a non capturing capture")
 

@@ -1,33 +1,31 @@
 from time import time
 
-
 class MotionBuffer:
-    def __init__(self, refresh_rate, frame):
+    def __init__(self, frame, refresh_rate=[1,5,10]):
         """refresh_rate is a list of times [s] at which to update the frame"""
         self.refresh_rate = refresh_rate
         self.size = len(refresh_rate)
         self.last_refresh = [time()] * self.size
-        self.frame_buffer = [frame] * self.size
-        self.is_change = 0
+        self.frame_buffer = [frame for i in range(self.size)]
+        self.last_movement = time()
 
-    def is_movement(self):
-        if self.is_change:
-            self.is_change = 0
-            return 1
-        return 0
-
-    def update_buffer(self, frame):
+    def update_buffer(self, frame, i, is_motion):
         actual_time = time()
+        if(is_motion):
+                self.last_movement = actual_time
+        
+        if actual_time - self.last_refresh[i] >= self.refresh_rate[i]:
+            self.frame_buffer[i] = frame
+            self.last_refresh[i] = actual_time
 
-        for i in range(self.size):
-            if actual_time - self.last_refresh[i] >= self.refresh_rate[i]:
-                # compare with previous frame including opacity -> extract this method to new class / create diamond
-                #   if motion_detected -> self.is_change = 1
-                self.frame_buffer[i] = frame
-                self.last_refresh[i] = actual_time
+    def get_buffer(self):
+        return self.frame_buffer
+    
+    def get_last_movement_time(self):
+        return self.last_movement
 
-    # def get_buffer(self):
-    #     return self.frame_buffer
-    #
-    # def get_refresh_rate(self):
-    #     return self.refresh_rate
+    def get_size(self):
+        return self.size
+
+    def get_frame(self, index):
+        return self.frame_buffer[index]

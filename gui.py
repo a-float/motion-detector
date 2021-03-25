@@ -5,6 +5,7 @@ from motion_lib import MotionTracker
 #DEF_ARGS should be given some accesor functions so that one cant't modify it by accident
 from motion_lib import DEF_ARGS 
 import imutils
+from PIL import Image, ImageDraw, ImageTk
 
 mask_drawing_radius = 5
 DEBUG_IMG_SIZE = (300,200)
@@ -12,11 +13,11 @@ DEBUG_IMG_SIZE = (300,200)
 #hardcoded size, works for my webcam
 #updates the image with the key thats in the window
 #if image is not specified, draws a black square
-def update_sgimage(window, key, image=None, size=(480, 360)):
+def update_sgimage(window, key, image=None, size=(400, 300)):
     if image is None:
         image = np.zeros((size[1], size[0], 3), np.uint8)
     else:
-         #imutils.resize does not take height argument, it always preserved xyratio
+         #imutils.resize does not take height argument, it always preserves xyratio
          image = imutils.resize(image, width=size[0])
         # image = cv2.resize(image, size, interpolation = cv2.INTER_AREA)
     imgbytes = cv2.imencode('.png', image)[1].tobytes()
@@ -35,7 +36,22 @@ def update_debug_panel(d_window, img_key=None, image=None, text_key=None, text='
 #preferably with Pillow, then set its alpha and draw the new image instead
 def canvas_draw_callback(event, mask_win, color):
     tk_canvas = mask_win['mask_canvas'].tk_canvas
-    r = mask_drawing_radius
+    r = int(mask_drawing_radius)
+    
+    x_size = 2*r
+    y_size = 2*r
+
+    # img = Image.new('RGBA', size = (x_size, y_size), color = (0, 0, 100, 255))
+    # draw = ImageDraw.Draw(img)
+
+    # # Now I draw the circle:
+    # draw.ellipse((0, 0, x_size-1, y_size-1), fill=(255, 255, 255, 255))
+    # # now save and close
+    # del draw
+    # img.save('test.png', 'PNG')
+    # img = ImageTk.PhotoImage(img)
+   
+    tk_canvas.create_image(0, 0, image=img)
     tk_canvas.create_oval(event.x-r, event.y-r, event.x+r, event.y+r, fill=color, outline='')
     tk_canvas.pack()
     # print("clicked at", event.x, event.y)
@@ -76,7 +92,8 @@ def create_debug_window():
 
 def create_main_window():
     menu_def =  [
-                    ['&Mask', ['Create mask']] 
+                    ['&Open', ['File', 'Camera']],
+                    ['&Mask', ['Create mask']]
                 ]
     # define the window layout
     layout = [  [sg.Menu(menu_def)],
@@ -131,10 +148,9 @@ def main(): #TODO maybe move the layouts to a separate file
 
     recording = False
     mt = MotionTracker() #no args, gets the default ones
-
     while True:
-        window, event, values = sg.read_all_windows(timeout=20) #refresh every 20ms
-
+        window, event, values = sg.read_all_windows(timeout=0)
+        # print(event)
         if event == 'Exit' or event == sg.WIN_CLOSED:
             if window == main_window:
                 if mt.is_capturing():
@@ -171,6 +187,20 @@ def main(): #TODO maybe move the layouts to a separate file
             elif event == 'Create mask':
                 if not mask_window:
                     mask_window = create_mask_window()
+            
+            elif event == 'File':
+                vid = sg.popup_get_file("Choose a video file: ")
+                if(vid is not None and len(vid) > 0):
+                    if mt.is_capturing():
+                        mt.stop_capture()
+                    mt.start_capture(vid)
+                    recording = True
+            
+            elif event == 'Camera':
+                if mt.is_capturing():
+                    mt.stop_capture()
+                mt.start_capture()
+                recording = True
 
             #slider keys are in format slider:[param_name]
             elif event.split(':')[0] == 'slider':
@@ -190,15 +220,13 @@ def main(): #TODO maybe move the layouts to a separate file
                 global mask_drawing_radius
                 mask_drawing_radius = values[event] 
 
-
         if recording:
             frame = mt.read_frame()
             parsed_frame = mt.parse_frame(frame)
-            delta_frame = mt.calc_diff(parsed_frame)
-            bit_frame = mt.calc_bit(delta_frame)
-            
+            delta_frame, bit_frame, is_motion = mt.detect(parsed_frame, frame) #draws at the second argument
+            mt.save_motion(frame, is_motion)    #possibly starts the recorder, savs the frame
+            # mt.show_contours(frame, bit_frame)
             mt.show_time(frame)
-            mt.show_contours(frame, parsed_frame, bit_frame)
             update_sgimage(main_window, 'image', frame, size=(480, 600))
             
             if debug_window is not None:
