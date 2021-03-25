@@ -2,7 +2,7 @@ from motion_lib import MotionTracker
 from gui import GUI
 
 
-def main():  # TODO maybe move the layouts to a separate file
+def main():
     recording = False
     mt = MotionTracker()  # no args, gets the default ones
 

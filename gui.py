@@ -3,7 +3,7 @@ import numpy as np
 import imutils
 import cv2
 # DEF_ARGS should be given some accessor functions so that one can't modify it by accident
-from motion_lib import DEF_ARGS
+from motion_lib import DEFAULT_PARAMS
 from gui_mask import GUIMaskPainter
 
 BTN_EXIT = 'exit'
@@ -77,7 +77,7 @@ def create_main_window():
                                             # resolution=1 if 'blur' not in v[0] else 2,  #blur has to be odd
                                             key="slider:" + str(v[0]))
                               ]
-                              for v in DEF_ARGS.items()
+                              for v in DEFAULT_PARAMS.items()
                           ]
                       ],
                       vertical_alignment='top'

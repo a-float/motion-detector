@@ -1,31 +1,27 @@
 #:kivy 2.0.0
 #:import CameraFeed ui.CameraFeed
+#:import DetectorSettingsPanel ui.DetectorSettingsPanel
 #:import VideoStream imutils.video.VideoStream
 
-<CameraFeedScreen>:
-    CameraFeed:
-        capture: VideoStream(src=0).start()
-        size: root.size
+<DetectorSettingsPanel>:
+    cols: 2
 
 <AppHeader>:
+    orientation: 'tb-lr'
+    size: self.width, 36
+    size_hint: (1, None)
+    padding: [10, 5]
+
     Button:
-        text: 'Init'
+        text: 'Edit Mask'
         width: 100
         size_hint: (None, 1)
+        on_press: root.handle_edit_mask()
+
     Button:
-        text: 'Load'
-        width: 100
-        size_hint: (None, 1)
-    Button:
-        text: 'Exit'
+        text: 'Debug Mode'
         width: 100
         size_hint: (None, 1)
 
 <FeedWindow>:
     orientation: 'vertical'
-    AppHeader:
-        orientation: 'tb-lr'
-        size: self.width, 36
-        size_hint: (1, None)
-        padding: [10, 5]
-    CameraFeedScreen:
