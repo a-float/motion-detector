@@ -75,7 +75,7 @@ class MotionTracker():
 		thresh = cv2.dilate(thresh, None, iterations=1)
 		return thresh
 
-	def draw_contours(self, frame, bit):
+	def draw_contours(self, frame, bit, color):
 		cnts = cv2.findContours(
 			bit.copy(), #not modifying the bit image, to show it in the debug
 			cv2.RETR_EXTERNAL, #all the countours with no real hierarchy
@@ -95,7 +95,7 @@ class MotionTracker():
 			x, y, w, h = int(x*scale), int(y*scale), int(w*scale), int(h*scale)
 			found_movement = True
 			# frame to draw on, top corner, bottom corner, color, thiccccknesss
-			cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+			cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 
 		return found_movement
 
@@ -112,10 +112,11 @@ class MotionTracker():
 
 	def detect(self, parsed, draw_on):	#motion is same as is_motion
 		motion = False
+		contour_colors = [(0,50,255), (0,120,255), (0,255,255)]
 		for i, ref in enumerate(reversed(self.motion_buffer.get_buffer())):
 			delta = self.calc_diff(parsed, ref)
 			bit = self.calc_bit(delta)
-			is_motion = self.draw_contours(draw_on, bit)
+			is_motion = self.draw_contours(draw_on, bit, contour_colors[i])
 			if is_motion:
 				motion = True
 			self.motion_buffer.update_buffer(parsed, i, is_motion) #TODO change i to ref or smth
@@ -136,7 +137,7 @@ class MotionTracker():
 	def show_time(self, frame):
 		cv2.putText(frame, 
 			datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),	#data
-			(10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1) #format
+			(10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2) #format
 	
 	def stop_capture(self):
 		#stop if video, release if camera i think
@@ -146,6 +147,8 @@ class MotionTracker():
 			self.video_source = None
 			self.cap = None
 			self.cap_size = None
+			if self.recorder.is_recording():
+				self.recorder.stop()
 		else:
 			print("Can't stop a non capturing capture")
 

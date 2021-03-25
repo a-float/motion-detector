@@ -149,7 +149,7 @@ def main(): #TODO maybe move the layouts to a separate file
     recording = False
     mt = MotionTracker() #no args, gets the default ones
     while True:
-        window, event, values = sg.read_all_windows(timeout=0)
+        window, event, values = sg.read_all_windows(timeout=1)
         # print(event)
         if event == 'Exit' or event == sg.WIN_CLOSED:
             if window == main_window:
@@ -226,7 +226,7 @@ def main(): #TODO maybe move the layouts to a separate file
             delta_frame, bit_frame, is_motion = mt.detect(parsed_frame, frame) #draws at the second argument
             mt.save_motion(frame, is_motion)    #possibly starts the recorder, savs the frame
             # mt.show_contours(frame, bit_frame)
-            mt.show_time(frame)
+            # mt.show_time(frame)
             update_sgimage(main_window, 'image', frame, size=(480, 600))
             
             if debug_window is not None:
