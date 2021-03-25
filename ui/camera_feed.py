@@ -8,6 +8,7 @@ from kivy.properties import (
 )
 import cv2
 
+
 class CameraFeed(Image):
     def __init__(self, **kwargs):
         super(CameraFeed, self).__init__(**kwargs)

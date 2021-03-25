@@ -3,11 +3,11 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
-from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 from kivy.graphics import Color, Ellipse, Line
+from kivy.properties import BooleanProperty
 from motion_lib import MotionTracker
-from ui import CameraFeedScreen, DetectorSettingsPanel
+from ui import CameraFeedScreen, DetectorSettingsPanel, DebugPanel
 
 kivy.require('2.0.0')
 
@@ -15,11 +15,11 @@ FPS = 60
 
 
 class AppHeader(StackLayout):
-    def __init__(self, **kwargs):
+    def __init__(self, handle_debug_mode, handle_edit_mode, **kwargs):
         super(AppHeader, self).__init__(**kwargs)
 
-    def handle_edit_mask(self):
-        print('WHAT')
+        self.handle_debug_mode = handle_debug_mode
+        self.handle_edit_mode = handle_edit_mode
 
 
 class MaskPaintWidget(Widget):
@@ -37,6 +37,8 @@ class MaskPaintWidget(Widget):
 
 
 class FeedWindow(BoxLayout):
+    debug_mode = BooleanProperty(False)
+
     def __init__(self, **kwargs):
         super(FeedWindow, self).__init__(**kwargs)
         self.mt = MotionTracker()  # no args, gets the default ones
@@ -47,7 +49,13 @@ class FeedWindow(BoxLayout):
         self.interval_handle = Clock.schedule_interval(self.update, 1.0 / FPS)
 
     def _setup_layout(self):
-        self._app_header = AppHeader()
+        def toggle_debug():
+            self.debug_mode = not self.debug_mode
+
+        def toggle_mask_edit():
+            pass
+
+        self._app_header = AppHeader(handle_debug_mode=toggle_debug, handle_edit_mode=toggle_mask_edit)
         self.add_widget(self._app_header)
 
         self._horizontal_box = BoxLayout()
@@ -58,6 +66,9 @@ class FeedWindow(BoxLayout):
 
         self._settings_panel = DetectorSettingsPanel(on_param_change=self._on_param_change)
         self._horizontal_box.add_widget(self._settings_panel)
+
+        # Setting up the hidden debug panel
+        self._debug_panel = DebugPanel()
 
     def update(self, dt):
         frame = self.mt.read_frame()
@@ -71,9 +82,22 @@ class FeedWindow(BoxLayout):
 
         self._camera_feed_screen.set_frame(frame)
 
+        self._debug_panel.set_step('Parsed frame', parsed_frame, colorfmt='luminance')
+        self._debug_panel.set_step('Delta frame', delta_frame, colorfmt='luminance')
+        self._debug_panel.set_step('Thresh frame', bit_frame, colorfmt='luminance')
+
     def _on_param_change(self, param_key, value):
-        print(f'{param_key}: {value}')
+        params = self.mt.get_params()
+
+        params[param_key] = value
+        self.mt.set_params(params)
         pass
+
+    def on_debug_mode(self, instance, value):
+        if value:
+            self._horizontal_box.add_widget(self._debug_panel, 2)
+        else:
+            self._horizontal_box.remove_widget(self._debug_panel)
 
 
 class MotionDetectorApp(App):
