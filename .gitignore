@@ -4,3 +4,6 @@
 # Python environment/cache
 __pycache__
 venv
+
+recordings/*
+!recordings

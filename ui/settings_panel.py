@@ -20,7 +20,7 @@ class DetectorSettingsPanel(GridLayout):
         self.on_param_change = on_param_change
 
         for i, (key, parameter) in enumerate(PARAMETERS.items()):
-            self.add_widget(Label(text=key, size_hint=(1, None)))
+            self.add_widget(Label(text=parameter.label, size_hint=(1, None), halign='left', text_size=(self.width, None)))
 
             slider = ParamSlider(
                 key,

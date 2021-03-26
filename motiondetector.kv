@@ -3,6 +3,25 @@
 #:import DetectorSettingsPanel ui.DetectorSettingsPanel
 #:import VideoStream imutils.video.VideoStream
 
+<LoadDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.path, filechooser.selection)
+
 <DetectorSettingsPanel>:
     cols: 2
 
@@ -16,13 +35,25 @@
         text: 'Edit Mask'
         width: 100
         size_hint: (None, 1)
-        on_press: root.handle_edit_mask()
+        on_release: root.handle_edit_mask()
 
     Button:
         text: 'Debug Mode'
         width: 100
         size_hint: (None, 1)
-        on_press: root.handle_debug_mode()
+        on_release: root.handle_debug_mode()
+
+    Button:
+        text: 'Open Camera'
+        width: 100
+        size_hint: (None, 1)
+        on_release: root.open_camera()
+
+    Button:
+        text: 'Open Video'
+        width: 100
+        size_hint: (None, 1)
+        on_release: root.show_load()
 
 <FeedWindow>:
     orientation: 'vertical'
