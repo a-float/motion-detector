@@ -7,7 +7,7 @@ Autorzy: Iwo Plaza, Mateusz Zalewski, Krzysztof Faracik
 Aplikacja umożliwia odtwarzanie oraz wyświetlanie sekwencji wideo z pliku, urządzenia wejściowego audio (kamery)
 lub strumienia z kamery online. Przy pomocy algorytmu, na każdej klatce zostają zaznaczone miejsca, w których
 został wykryty ruch względem poprzednich klatek. Możliwa jest edycja parametrów wykrywania ruchu takich jak
-minimalne pole obszaru detekcji, oraz zmiana czułości samej detekcji.
+minimalne pole obszaru detekcji czy zmiana czułości na ruch.
 
 W razie wykrycia ruchu program rozpoczyna zapis pliku wideo do pliku o nazwie odpowiadającej dacie oraz
 godzinie wystąpienia ruchu.
@@ -46,15 +46,15 @@ File -> Settings -> Project:motion-detector -> Python Interpreter -> “+” ora
 
 ## Algorytm detekcji ruchu
 Zaimplementowany przez nas algorytm wykrywania ruchu, korzysta z funkcji biblioteki OpenCV.
-Może on zostać podzielony na 5 główne etapy:
+Może on zostać podzielony na 5 głównych etapów:
 - Przetworzenie klatki wejściowej
-- zmniejszenie rozdzielczości
-- konwersja koloru na skalę szarości (cv2.cvtColor(,cv2.COLOR_BGR2GRAY)
-- zastosowanie rozmycia gaussowskiego (cv2.GaussianBlur)
+  * zmniejszenie rozdzielczości
+  * konwersja koloru na skalę szarości (cv2.cvtColor(,cv2.COLOR_BGR2GRAY)
+  * zastosowanie rozmycia gaussowskiego (cv2.GaussianBlur)
 - Wyznaczenie różnicy klatki bieżącej i klatki referencyjnej (cv2.absdiff)
 - Przemnożenie różnicy przez wybraną maskę czułości (cv2.multiply)
 - Binaryzacja otrzymanej różnicy względem edytowalnej wartości progowej  (cv2.threshold)
-- Na koniec otrzymaną mapę bitową rozszerzamy (cv.dilate), by uprościć kształt wyznaczonej różnicy
+  * Na koniec otrzymaną mapę bitową rozszerzamy (cv.dilate), by uprościć kształt wyznaczonej różnicy
 - Wyznaczenie obszarów różnicy (cv2.findContours) oraz odfiltrowanie tych, których powierzchnia jest zbyt mała.
 
 ### Współbierzne częstotliwości detekcji <a class='anchor' id='frequencies'></a>
