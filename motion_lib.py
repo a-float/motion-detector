@@ -81,9 +81,8 @@ class MotionTracker:
 			self.cap.open()
 
 	def read_frame(self):
-		frame = self.cap.read()
-		frame = frame if self.video_source is None else frame[1]
-		if frame is None:
+		ret, frame = self.cap.read()
+		if ret == False:
 			self.stop_capture()
 			return None
 		return frame
