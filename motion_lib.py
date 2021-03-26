@@ -82,9 +82,8 @@ class MotionTracker:
 			print(f'Something went wrong when trying to start capturing from "{video_source}"')
 
 	def read_frame(self):
-		frame = self.cap.read()
-		frame = frame if self.video_source is None else frame[1]
-		if frame is None:
+		ret, frame = self.cap.read()
+		if ret == False:
 			self.stop_capture()
 			return None
 		return frame

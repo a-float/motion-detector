@@ -137,6 +137,10 @@ class FeedWindow(BoxLayout):
             return
 
         frame = self.mt.read_frame()
+        # frame read unsuccessful - video has ended. The capture has been closed
+        # nothing to show
+        if frame is None:  
+            return 
 
         parsed_frame = self.mt.parse_frame(frame)
         delta_frame, bit_frame, is_motion = self.mt.detect(parsed_frame, frame)  # draws at the second argument
