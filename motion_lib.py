@@ -78,7 +78,8 @@ class MotionTracker:
 		self.video_source = video_source
 		self.cap = cv2.VideoCapture(video_source)
 		if not self.cap.isOpened():
-			self.cap.open()
+			self.cap = None
+			print(f'Something went wrong when trying to start capturing from "{video_source}"')
 
 	def read_frame(self):
 		frame = self.cap.read()

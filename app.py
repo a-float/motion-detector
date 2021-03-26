@@ -24,14 +24,20 @@ class LoadDialog(FloatLayout):
     cancel = ObjectProperty(None)
 
 
+class LoadStreamDialog(FloatLayout):
+    load = ObjectProperty(None)
+    cancel = ObjectProperty(None)
+
+
 class AppHeader(StackLayout):
-    def __init__(self, handle_debug_mode, handle_edit_mask, show_load, open_camera, **kwargs):
+    def __init__(self, handle_debug_mode, handle_edit_mask, open_camera, show_load, show_load_stream, **kwargs):
         super(AppHeader, self).__init__(**kwargs)
 
         self.handle_debug_mode = handle_debug_mode
         self.handle_edit_mask = handle_edit_mask
-        self.show_load = show_load
         self.open_camera = open_camera
+        self.show_load = show_load
+        self.show_load_stream = show_load_stream
 
 
 class FeedWindow(BoxLayout):
@@ -77,7 +83,8 @@ class FeedWindow(BoxLayout):
             handle_debug_mode=toggle_debug,
             handle_edit_mask=toggle_mask_edit,
             open_camera=self.open_camera,
-            show_load=self.show_load
+            show_load=self.show_load,
+            show_load_stream=self.show_load_stream
         )
         self.add_widget(self._app_header)
 
@@ -102,16 +109,21 @@ class FeedWindow(BoxLayout):
 
     def show_load(self):
         content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
-        self._popup = Popup(title="Load video file", content=content,
+        self._popup = Popup(title="Open video file", content=content,
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
-    def load(self, path, filename):
-        vid = os.path.join(path, filename[0])
-        if vid is not None and len(vid) > 0:
+    def show_load_stream(self):
+        content = LoadStreamDialog(load=self.load, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Open stream", content=content,
+                            size_hint=(0.9, None), height=200)
+        self._popup.open()
+
+    def load(self, path):
+        if path is not None and len(path) > 0:
             if self.mt.is_capturing():
                 self.mt.stop_capture()
-            self.mt.start_capture(vid)
+            self.mt.start_capture(path)
 
         self.dismiss_popup()
 

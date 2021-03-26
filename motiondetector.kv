@@ -2,6 +2,7 @@
 #:import CameraFeed ui.CameraFeed
 #:import DetectorSettingsPanel ui.DetectorSettingsPanel
 #:import VideoStream imutils.video.VideoStream
+#:import os os
 
 <LoadDialog>:
     BoxLayout:
@@ -20,7 +21,34 @@
 
             Button:
                 text: "Load"
-                on_release: root.load(filechooser.path, filechooser.selection)
+                on_release: root.load(os.path.join(str(filechooser.path), str(filechooser.selection[0])))
+
+<LoadStreamDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        spacing: 20
+        padding: (10, 10)
+
+        TextInput:
+            id: textinput
+            size_hint_y: None
+            height: 30
+            text: 'Hello world'
+            multiline: False
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(textinput.text)
+
 
 <DetectorSettingsPanel>:
     cols: 2
@@ -54,6 +82,12 @@
         width: 100
         size_hint: (None, 1)
         on_release: root.show_load()
+
+    Button:
+        text: 'Open Stream'
+        width: 100
+        size_hint: (None, 1)
+        on_release: root.show_load_stream()
 
 <FeedWindow>:
     orientation: 'vertical'
