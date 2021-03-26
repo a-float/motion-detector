@@ -45,7 +45,7 @@ class MotionTracker:
 		self.ref_frame = None
 		self.video_source = None  # to remember what we are streaming
 		self.ref_frame_age = 0
-		self.mask = np.full((WIDTH, WIDTH, 1), 255, np.uint8)
+		self.mask = None
 
 	def set_params(self, args):
 		self.params = args
@@ -55,6 +55,16 @@ class MotionTracker:
 
 	def _get_param_value(self, key):
 		return self.params.get(key, PARAMETERS[key].default)
+
+	def _prepare_mask(self, frame):
+		height, width = frame.shape
+
+		if self.mask is not None:
+			mask_height, mask_width = self.mask.shape
+			if mask_width == width and mask_height == height:
+				return
+
+		self.mask = np.full((height, width), 255, np.uint8)
 
 	def start_capture(self, video_source=None):
 		if self.is_capturing():
@@ -101,8 +111,12 @@ class MotionTracker:
 		# compute the absolute difference between the current frame and the first frame
 		assert self.ref_frame is not None
 		frame_delta = cv2.absdiff(self.ref_frame, grey_frame)
-		return frame_delta
-		
+
+		self._prepare_mask(frame_delta)
+
+		frame_delta = np.multiply(frame_delta, self.mask / 255.0)
+
+		return frame_delta.astype(np.uint8)
 
 	def calc_bit(self, frame_delta):
 		threshold = self._get_param_value('threshold')
@@ -149,3 +163,6 @@ class MotionTracker:
 
 	def get_mask(self):
 		return self.mask
+
+	def set_mask(self, mask):
+		self.mask = mask

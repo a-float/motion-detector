@@ -1,5 +1,6 @@
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.slider import Slider
 from kivy.uix.stacklayout import StackLayout
@@ -61,6 +62,7 @@ class MaskPainterScreen(BoxLayout):
         super(MaskPainterScreen, self).__init__(**kwargs)
 
         self.orientation = 'vertical'
+        self.padding = (10, 10)
 
         # Upper box
         self.upper_box = AnchorLayout(anchor_x='center', anchor_y='center')
@@ -70,7 +72,7 @@ class MaskPainterScreen(BoxLayout):
         self.upper_box.add_widget(self.canvas_wrapper)
 
         # Tools
-        self.tools_box = StackLayout(orientation='tb-lr', size_hint=(1, None), height=40)
+        self.tools_box = StackLayout(orientation='tb-lr', size_hint=(1, None), height=40, spacing=(10, 0))
         self.add_widget(self.tools_box)
 
         def handle_size_change(instance, value):
@@ -79,8 +81,8 @@ class MaskPainterScreen(BoxLayout):
         def handle_intensity_change(instance, value):
             self.canvas_wrapper.intensity = value
 
-        def handle_apply_changes(instance, value):
-            handle_set_mask(self.canvas_wrapper.export_as_image())
+        def handle_apply_changes(instance):
+            handle_set_mask(self.canvas_wrapper.export_as_image().texture)
 
         size_slider = Slider(min=5, max=50)
         size_tool = ToolWrapper('Size', size_slider, size_hint=(None, 1), width=200)
@@ -91,5 +93,8 @@ class MaskPainterScreen(BoxLayout):
         intensity_tool = ToolWrapper('Intensity', intensity_slider, size_hint=(None, 1), width=200)
         self.tools_box.add_widget(intensity_tool)
         intensity_slider.bind(value=handle_intensity_change)
+
+        apply_button = Button(text="Apply changes", on_press=handle_apply_changes, width=250, size_hint=(None, 1))
+        self.tools_box.add_widget(apply_button)
 
 

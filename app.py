@@ -8,6 +8,8 @@ from kivy.properties import BooleanProperty
 from motion_lib import MotionTracker
 from ui import CameraFeedScreen, DetectorSettingsPanel, DebugPanel, MaskPainterScreen
 from ui.opencv_image import opencv_to_texture
+import numpy as np
+import cv2 as cv2
 
 kivy.require('2.0.0')
 
@@ -38,8 +40,16 @@ class FeedWindow(BoxLayout):
         def toggle_debug():
             self.debug_mode = not self.debug_mode
 
-        def handle_set_mask(mask_image):
-            pass
+        def handle_set_mask(mask_texture):
+            npbuffer = np.frombuffer(mask_texture.pixels, np.uint8)
+            height, width = mask_texture.height, mask_texture.width
+            npbuffer = npbuffer.reshape(height, width, 4)
+            gray = cv2.cvtColor(npbuffer, cv2.COLOR_BGR2GRAY)
+
+            self.mt.set_mask(gray)
+
+            self._mask_edit_popup.dismiss()
+            self._mask_edit_popup = None
 
         def toggle_mask_edit():
             if self._mask_edit_popup is not None:
