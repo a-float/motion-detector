@@ -1,4 +1,5 @@
 from imutils.video import VideoStream
+import numpy as np
 import argparse
 import datetime
 import imutils
@@ -42,8 +43,9 @@ class MotionTracker:
 		self.params = params
 		self.cap = None
 		self.ref_frame = None
-		self.video_source = None # to remember what we are streaming
+		self.video_source = None  # to remember what we are streaming
 		self.ref_frame_age = 0
+		self.mask = np.full((WIDTH, WIDTH, 1), 255, np.uint8)
 
 	def set_params(self, args):
 		self.params = args
@@ -144,3 +146,6 @@ class MotionTracker:
 
 	def is_capturing(self):
 		return self.cap is not None
+
+	def get_mask(self):
+		return self.mask

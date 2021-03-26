@@ -2,12 +2,12 @@ import kivy
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.popup import Popup
 from kivy.uix.stacklayout import StackLayout
-from kivy.uix.widget import Widget
-from kivy.graphics import Color, Ellipse, Line
 from kivy.properties import BooleanProperty
 from motion_lib import MotionTracker
-from ui import CameraFeedScreen, DetectorSettingsPanel, DebugPanel
+from ui import CameraFeedScreen, DetectorSettingsPanel, DebugPanel, MaskPainterScreen
+from ui.opencv_image import opencv_to_texture
 
 kivy.require('2.0.0')
 
@@ -15,25 +15,11 @@ FPS = 60
 
 
 class AppHeader(StackLayout):
-    def __init__(self, handle_debug_mode, handle_edit_mode, **kwargs):
+    def __init__(self, handle_debug_mode, handle_edit_mask, **kwargs):
         super(AppHeader, self).__init__(**kwargs)
 
         self.handle_debug_mode = handle_debug_mode
-        self.handle_edit_mode = handle_edit_mode
-
-
-class MaskPaintWidget(Widget):
-    def on_touch_down(self, touch):
-        with self.canvas:
-            Color(1, 1, 1, 0.5)
-            d = 30.
-            Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
-            touch.ud['line'] = Line(points=(touch.x, touch.y))
-
-        print(touch)
-
-    def on_touch_move(self, touch):
-        touch.ud['line'].points += [touch.x, touch.y]
+        self.handle_edit_mask = handle_edit_mask
 
 
 class FeedWindow(BoxLayout):
@@ -52,12 +38,24 @@ class FeedWindow(BoxLayout):
         def toggle_debug():
             self.debug_mode = not self.debug_mode
 
-        def toggle_mask_edit():
+        def handle_set_mask(mask_image):
             pass
 
-        self._app_header = AppHeader(handle_debug_mode=toggle_debug, handle_edit_mode=toggle_mask_edit)
+        def toggle_mask_edit():
+            if self._mask_edit_popup is not None:
+                self._mask_edit_popup.dismiss()
+                self._mask_edit_popup = None
+            else:
+                mask_texture = opencv_to_texture(self.mt.get_mask(), colorfmt='luminance')
+                content = MaskPainterScreen(mask_texture=mask_texture, handle_set_mask=handle_set_mask)
+                self._mask_edit_popup = Popup(title="Edit mask", content=content, size_hint=(1, 1))
+                self._mask_edit_popup.open()
+
+        # Header
+        self._app_header = AppHeader(handle_debug_mode=toggle_debug, handle_edit_mask=toggle_mask_edit)
         self.add_widget(self._app_header)
 
+        # Middle content
         self._horizontal_box = BoxLayout()
         self.add_widget(self._horizontal_box)
 
@@ -69,6 +67,9 @@ class FeedWindow(BoxLayout):
 
         # Setting up the hidden debug panel
         self._debug_panel = DebugPanel()
+
+        # Mask edit popup
+        self._mask_edit_popup = None
 
     def update(self, dt):
         frame = self.mt.read_frame()
