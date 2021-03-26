@@ -1,6 +1,8 @@
 # System Wykrywania Ruchu
 Autorzy: Iwo Plaza, Mateusz Zalewski, Krzysztof Faracik
 
+![Alt text](misc/main.jpg "Aplikacja")
+
 ## Cel
 Aplikacja umożliwia odtwarzanie oraz wyświetlanie sekwencji wideo z pliku, urządzenia wejściowego audio (kamery)
 lub strumienia z kamery online. Przy pomocy algorytmu, na każdej klatce zostają zaznaczone miejsca, w których
@@ -63,6 +65,9 @@ powolnych (np. powoli skradający się człowiek).
 
 
 ## Krótka instrukcja użytkowania
+
+![Alt text](misc/usage.jpg "Opis paneli")
+
 ### Okno główne
 Aplikację uruchamiamy otwierając plik `app.py` przy pomocy Pythona zainstalowawszy wcześniej wszystkie wymagane biblioteki.
 Ukaże się okno główne, z którego będziemy mogli otworzyć wykrywanie z różnych źródeł:
