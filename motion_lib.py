@@ -83,9 +83,10 @@ class MotionTracker:
 
 	def read_frame(self):
 		ret, frame = self.cap.read()
-		if ret == False:
+		if not ret:
 			self.stop_capture()
 			return None
+		time.sleep(1/self.get_capture_framerate()*0.9)
 		return frame
 
 	def update_ref_frame(self, parsed):
@@ -190,7 +191,7 @@ class MotionTracker:
 	def show_time(self, frame):
 		cv2.putText(frame, 
 			datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),	#data
-			(10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2) #format
+			(10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2) #format
 	
 	def stop_capture(self):
 		# stop if video, release if camera i think
